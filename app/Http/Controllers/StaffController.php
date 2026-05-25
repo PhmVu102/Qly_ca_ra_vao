@@ -52,16 +52,27 @@ class StaffController extends Controller
             ->pluck('shift_id')
             ->toArray();
 
-        $hasMoreShifts = $todayShifts->filter(function ($s) use ($checkedInShiftIds) {
-            return !in_array($s->id, $checkedInShiftIds);
+        $now = now();
+        
+        $hasMoreShifts = $todayShifts->filter(function ($s) use ($checkedInShiftIds, $today, $now) {
+            if (in_array($s->id, $checkedInShiftIds)) return false;
+            $end   = \Carbon\Carbon::parse($today . ' ' . $s->end_time);
+            $start = \Carbon\Carbon::parse($today . ' ' . $s->start_time);
+            if ($end->lt($start)) $end->addDay();
+            return $now->lte($end);
         })->isNotEmpty();
+
 
         $department = DB::table('departments')
             ->where('id', auth()->user()->department_id)
             ->value('name');
 
-        $nextShift = $todayShifts->first(function ($s) use ($checkedInShiftIds) {
-            return !in_array($s->id, $checkedInShiftIds);
+        $nextShift = $todayShifts->first(function ($s) use ($checkedInShiftIds, $today, $now) {
+            if (in_array($s->id, $checkedInShiftIds)) return false;
+            $end   = \Carbon\Carbon::parse($today . ' ' . $s->end_time);
+            $start = \Carbon\Carbon::parse($today . ' ' . $s->start_time);
+            if ($end->lt($start)) $end->addDay();
+            return $now->lte($end);
         });
 
         return view('staff.dashboard', compact(
@@ -490,11 +501,12 @@ class StaffController extends Controller
         $attendances = DB::table('attendances')
             ->where('user_id', auth()->id())
             ->orderByDesc('work_date')
+            ->orderByDesc('check_in_time')
+            ->selectRaw("*, IF(check_out_time IS NULL, 'working', status) as status")  // thêm dòng này
             ->paginate(15);
 
         return view('staff.history', compact('attendances'));
-    }
-
+}
     private function calculateDistance(
         $lat1,
         $lon1,
