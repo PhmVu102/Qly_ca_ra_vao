@@ -15,7 +15,8 @@ class ScheduleController extends Controller
     public function index()
     {
         $schedules = WorkSchedule::with('user', 'shift', 'location')
-            ->orderBy('work_date', 'desc')
+            ->orderByDesc('work_date')
+            ->orderByDesc('id')
             ->paginate(15);
 
         return view('admin.schedules.index', compact('schedules'));
