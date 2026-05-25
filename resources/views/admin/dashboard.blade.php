@@ -94,22 +94,22 @@
             </div>
         </div>
 
-        {{-- ===== BỐ CỤC CHÍNH: KHỐI TRÁI BIỂU ĐỒ (CŨ) & KHỐI PHẢI THÔNG TIN TỔNG QUAN CA/CHẤM CÔNG/GPS (MỚI) ===== --}}
+        {{-- ===== BỐ CỤC CHÍNH: KHỐI TRÁI (BIỂU ĐỒ) & KHỐI PHẢI (SỐ LIỆU CA, LOG, GPS) ===== --}}
         <div class="dash-row main-split-row">
 
-            {{-- KHỐI TRÁI: Giữ nguyên hệ thống biểu đồ cũ --}}
+            {{-- KHỐI TRÁI: Hệ thống biểu đồ 7 ngày và trạng thái --}}
             <div class="side-charts-column">
-                {{-- Biểu đồ 7 ngày gọn gàng --}}
+                {{-- Biểu đồ 7 ngày --}}
                 <div class="card card-chart shadow-sm">
                     <div class="card-head">
                         <h2>Chấm công 7 ngày qua</h2>
                     </div>
                     <div class="chart-canvas-container">
-                        <canvas id="weekChart" height="260"></canvas>
+                        <canvas id="weekChart" height="205"></canvas>
                     </div>
                 </div>
 
-                {{-- Tỉ lệ trạng thái hôm nay gọn gàng --}}
+                {{-- Tỉ lệ trạng thái hôm nay --}}
                 <div class="card card-donut shadow-sm">
                     <div class="card-head">
                         <h2>Tỷ lệ chấm công hôm nay</h2>
@@ -117,7 +117,7 @@
                     <div class="donut-wrap">
                         <canvas id="statusChart" width="120" height="120"></canvas>
                         <div class="donut-legend">
-                            <div class="legend-item"><span class="dot dot-present"></span> Đúng giờ <b>{{ $presentToday }}</b></div>
+                            <div class="legend-item"><span class="dot dot-present"></span> Đúng giờ <b>{{ $onTimeToday  }}</b></div>
                             <div class="legend-item"><span class="dot dot-late"></span> Muộn <b>{{ $lateToday }}</b></div>
                             <div class="legend-item"><span class="dot dot-early"></span> Về sớm <b>{{ $earlyLeaveToday }}</b></div>
                             <div class="legend-item"><span class="dot dot-absent"></span> Vắng <b>{{ $absentToday }}</b></div>
@@ -127,62 +127,58 @@
                 </div>
             </div>
 
-            {{-- KHỐI PHẢI MỚI: TỔNG QUAN CA ĐÃ PHÂN, CA LÀM VIỆC, DỮ LIỆU CHẤM CÔNG, VỊ TRÍ GPS MỚI NHẤT --}}
             <div class="right-data-column">
 
                 {{-- 1. Phân Hệ Tổng Quan Ca Đã Phân & Các Ca Làm Việc --}}
                 <div class="card shadow-sm grid-two-columns">
-                    {{-- Sub-card: Ca đã phân hôm nay --}}
                     <div class="sub-data-block border-r">
                         <div class="card-head-compact">
                             <h3><i class="ti ti-calendar-stats text-indigo"></i> Phân ca hôm nay</h3>
+
                             <a href="{{ route('admin.schedules.index') }}" class="text-xs text-blue-500">Chi tiết</a>
                         </div>
+
                         <div class="compact-list mt-3">
                             <div class="flex-justify-between py-1 border-b text-xs">
                                 <span class="text-gray-500">Tổng ca điều phối:</span>
+
                                 <span class="font-bold text-gray-800">{{ $scheduledToday ?? 0 }} ca</span>
                             </div>
+
                             <div class="flex-justify-between py-1 border-b text-xs">
                                 <span class="text-gray-500">Nhân sự thực tế:</span>
+
                                 <span class="font-bold text-emerald-600">{{ $presentToday ?? 0 }} đang làm</span>
                             </div>
+
                             <div class="flex-justify-between py-1 text-xs">
                                 <span class="text-gray-500">Ca chưa check-in:</span>
-                                <span class="font-bold text-rose-500">{{ ($scheduledToday ?? 0) - ($presentToday ?? 0) }} ca</span>
+
+                                <span class="font-bold text-rose-500">{{ max(0, ($scheduledToday ?? 0) - ($presentToday ?? 0)) }} ca</span>
                             </div>
                         </div>
                     </div>
 
-                    {{-- Sub-card: Danh sách cấu hình các ca làm việc --}}
+                    {{-- Sub-card: Danh sách cấu hình các ca làm việc thực tế --}}
                     <div class="sub-data-block">
                         <div class="card-head-compact">
                             <h3><i class="ti ti-alarm text-purple"></i> Khung giờ ca làm việc</h3>
+
                             <a href="{{ route('admin.shifts.index') }}" class="text-xs text-blue-500">Cấu hình</a>
                         </div>
+
                         <div class="compact-list shift-mini-scroll mt-2">
-                            @if(isset($activeShifts) && count($activeShifts) > 0)
-                                @foreach($activeShifts as $shift)
-                                    <div class="shift-mini-item">
-                                        <span class="shift-mini-name">{{ $shift->name }}</span>
-                                        <span class="shift-mini-time">{{ substr($shift->start_time, 0, 5) }} - {{ substr($shift->end_time, 0, 5) }}</span>
-                                    </div>
-                                @endforeach
-                            @else
-                                {{-- Fallback tĩnh nếu Controller chưa truyền biến --}}
+                            @forelse($activeShifts as $shift)
                                 <div class="shift-mini-item">
-                                    <span class="shift-mini-name">Ca Hành Chính (HC)</span>
-                                    <span class="shift-mini-time">08:00 - 17:00</span>
+                                    <span class="shift-mini-name">{{ $shift->name }}</span>
+
+                                    <span class="shift-mini-time">{{ \Carbon\Carbon::parse($shift->start_time)->format('H:i') }} - {{ \Carbon\Carbon::parse($shift->end_time)->format('H:i') }}</span>
                                 </div>
-                                <div class="shift-mini-item">
-                                    <span class="shift-mini-name">Ca Sáng (S)</span>
-                                    <span class="shift-mini-time">06:00 - 14:00</span>
+                            @empty
+                                <div class="text-center py-4 text-[11px] text-gray-400 italic">
+                                    <i class="ti ti-info-circle mb-1 block text-sm"></i> Chưa có ca làm việc nào
                                 </div>
-                                <div class="shift-mini-item">
-                                    <span class="shift-mini-name">Ca Chiều (C)</span>
-                                    <span class="shift-mini-time">14:00 - 22:00</span>
-                                </div>
-                            @endif
+                            @endforelse
                         </div>
                     </div>
                 </div>
@@ -191,100 +187,40 @@
                 <div class="card shadow-sm">
                     <div class="card-head-compact">
                         <h3><i class="ti ti-device-analytics text-emerald"></i> Log chấm công thời gian thực</h3>
+
                         <a href="{{ route('admin.attendance.index') }}" class="text-xs text-blue-500">Xem tất cả</a>
                     </div>
 
                     <div class="realtime-log-container mt-2">
-                        @if(isset($recentLogs) && count($recentLogs) > 0)
-                            @foreach($recentLogs as $log)
-                                <div class="realtime-log-row">
-                                    <div class="log-left-part">
-                                        <span class="avatar-sm">{{ strtoupper(substr($log->user->name ?? 'N', 0, 1)) }}</span>
-                                        <div>
-                                            <p class="user-log-name">{{ $log->user->name ?? 'Nhân sự' }}</p>
-                                            <span class="user-log-sub">{{ $log->work_schedule?->shift?->name ?? 'Ca tự do' }}</span>
-                                        </div>
-                                    </div>
-                                    <div class="log-right-part">
-                                        @if($log->log_type === 'check_out' || $log->check_out_time)
-                                            <span class="badge-status bg-rose-100 text-rose-700">Check-Out</span>
-                                            <span class="log-timestamp">{{ \Carbon\Carbon::parse($log->scan_time ?? $log->check_out_time)->format('H:i:s') }}</span>
-                                        @else
-                                            <span class="badge-status bg-emerald-100 text-emerald-700">Check-In</span>
-                                            <span class="log-timestamp">{{ \Carbon\Carbon::parse($log->scan_time ?? $log->check_in_time)->format('H:i:s') }}</span>
-                                        @endif
+                        @forelse($recentLogs as $log)
+                            <div class="realtime-log-row">
+                                <div class="log-left-part">
+                                    <span class="avatar-sm">{{ strtoupper(substr($log->user->name ?? '?', 0, 1)) }}</span>
+
+                                    <div>
+                                        <p class="user-log-name">{{ $log->user->name ?? 'Nhân sự đã xóa' }}</p>
+
+                                        <span class="user-log-sub">{{ $log->workSchedule->shift->name ?? 'Ca tự do' }}</span>
                                     </div>
                                 </div>
-                            @endforeach
-                        @else
-                            {{-- Trạng thái trống --}}
-                            <div class="text-center py-4 text-xs text-gray-400">
-                                <i class="ti ti-database-off text-lg block mb-1"></i> Chưa có dữ liệu quét công trong ngày.
+
+                                <div class="log-right-part">
+                                    @if($log->log_type === 'check_out')
+                                        <span class="badge-status bg-rose-100 text-rose-700">Check-Out</span>
+                                    @else
+                                        <span class="badge-status bg-emerald-100 text-emerald-700">Check-In</span>
+                                    @endif
+                                    <span class="log-timestamp">{{ \Carbon\Carbon::parse($log->scan_time)->format('H:i:s') }}</span>
+                                </div>
                             </div>
-                        @endif
+                        @empty
+                            <div class="text-center py-5 text-xs text-gray-400">
+
+                                <i class="ti ti-database-off text-lg block mb-1"></i> Hôm nay chưa có dữ liệu quét công.
+                            </div>
+                        @endforelse
                     </div>
                 </div>
-
-                {{-- 3. Phân Hệ Vị Trí GPS Mới Nhất Khi Đi/Về --}}
-                <div class="card shadow-sm">
-                    <div class="card-head-compact">
-                        <h3><i class="ti ti-map-pin text-rose"></i> Định vị GPS giao dịch gần nhất</h3>
-                        <a href="{{ route('admin.locations.index') }}" class="text-xs text-blue-500">Bản đồ chi nhánh</a>
-                    </div>
-
-                    <div class="gps-list mt-2">
-                        @if(isset($recentGpsLogs) && count($recentGpsLogs) > 0)
-                            @foreach($recentGpsLogs as $gps)
-                                <div class="gps-item-row">
-                                    <div class="gps-info">
-                                        <span class="gps-indicator"></span>
-                                        <div>
-                                            <p class="gps-user">{{ $gps->user_name }}</p>
-                                            <span class="gps-coords">Tọa độ: {{ number_format($gps->lat, 5) }}, {{ number_format($gps->lng, 5) }}</span>
-                                        </div>
-                                    </div>
-                                    <div class="gps-meta">
-                                        <span class="gps-time">{{ $gps->time }}</span>
-                                        <span class="gps-type-badge">{{ $gps->type }}</span>
-                                    </div>
-                                </div>
-                            @endforeach
-                        @else
-                            {{-- Giao diện mô phỏng định vị sang trọng nếu chưa đổ data động tự động từ backend --}}
-                            <div class="gps-item-row">
-                                <div class="gps-info">
-                                    <span class="gps-indicator present"></span>
-                                    <div>
-                                        <p class="gps-user">Nguyễn Văn A</p>
-                                        <span class="gps-coords">Vĩ độ: 21.02851, Kinh độ: 105.80481 (Chi nhánh HN)</span>
-                                    </div>
-                                </div>
-                                <div class="gps-meta">
-                                    <span class="gps-time">Vừa xong</span>
-                                    <span class="gps-type-badge in">Vào ca</span>
-                                </div>
-                            </div>
-                            <div class="gps-item-row">
-                                <div class="gps-info">
-                                    <span class="gps-indicator absent"></span>
-                                    <div>
-                                        <p class="gps-user">Trần Thị B</p>
-                                        <span class="gps-coords">Vĩ độ: 10.76262, Kinh độ: 106.66017 (Chi nhánh HCM)</span>
-                                    </div>
-                                </div>
-                                <div class="gps-meta">
-                                    <span class="gps-time">12 phút trước</span>
-                                    <span class="gps-type-badge out">Hết ca</span>
-                                </div>
-                            </div>
-                        @endif
-                    </div>
-                </div>
-
-            </div>
-        </div>
-
-        {{-- ===== DÒNG DƯỚI CÙNG: DANH SÁCH ĐI MUỘN HÔM NAY ===== --}}
         <div class="dash-row full-width-row">
             <div class="card card-late shadow-sm">
                 <div class="card-head">
@@ -313,6 +249,9 @@
                 </div>
             </div>
         </div>
+            </div>
+        </div>
+
     </div>
 @endsection
 
@@ -544,7 +483,7 @@
                 labels: ['Đúng giờ', 'Muộn', 'Về sớm', 'Vắng', 'Thiếu log'],
                 datasets: [{
                     data: [
-                        {{ $presentToday }},
+                        {{ $onTimeToday  }},
                         {{ $lateToday }},
                         {{ $earlyLeaveToday }},
                         {{ $absentToday }},
