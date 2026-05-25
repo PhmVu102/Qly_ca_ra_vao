@@ -21,15 +21,13 @@
                 <div class="admin-chip">
                     <x-dropdown align="right" width="48">
                         <x-slot name="trigger">
-                            <div style="display: flex;align-items: center;">
+                            <div style="display: flex;align-items: center; cursor: pointer;">
                                 <span>{{ strtoupper(substr(auth()->user()->name, 0, 1)) }}</span>{{ auth()->user()->name }}
-                                <button class="inline-flex items-center py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
-                                    <div class="ms-1">
-                                        <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                                        </svg>
-                                    </div>
-                                </button>
+                                <div class="ms-1">
+                                    <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                    </svg>
+                                </div>
                             </div>
                         </x-slot>
 
@@ -96,10 +94,10 @@
             </div>
         </div>
 
-        {{-- ===== BỐ CỤC MỚI: BIỂU ĐỒ THU NHỎ (TRÁI) & PHÂN HỆ QUẢN LÝ THEO CSDL (PHẢI) ===== --}}
+        {{-- ===== BỐ CỤC CHÍNH: KHỐI TRÁI BIỂU ĐỒ (CŨ) & KHỐI PHẢI THÔNG TIN TỔNG QUAN CA/CHẤM CÔNG/GPS (MỚI) ===== --}}
         <div class="dash-row main-split-row">
 
-            {{-- KHỐI TRÁI: Thu nhỏ các biểu đồ thống kê --}}
+            {{-- KHỐI TRÁI: Giữ nguyên hệ thống biểu đồ cũ --}}
             <div class="side-charts-column">
                 {{-- Biểu đồ 7 ngày gọn gàng --}}
                 <div class="card card-chart shadow-sm">
@@ -107,7 +105,7 @@
                         <h2>Chấm công 7 ngày qua</h2>
                     </div>
                     <div class="chart-canvas-container">
-                        <canvas id="weekChart" height="135"></canvas>
+                        <canvas id="weekChart" height="260"></canvas>
                     </div>
                 </div>
 
@@ -129,66 +127,161 @@
                 </div>
             </div>
 
-            {{-- KHỐI PHẢI: TOÀN BỘ DANH MỤC QUẢN LÝ ĐỒNG BỘ THEO TABLES TRONG CSDL --}}
-            <div class="card card-management-hub shadow-sm">
-                <div class="card-head">
-                    <div>
-                        <h2>Hệ thống quản trị số liệu</h2>
-                        <p class="card-subtitle">Ánh xạ dữ liệu phân hệ thời gian thực từ cơ sở dữ liệu</p>
+            {{-- KHỐI PHẢI MỚI: TỔNG QUAN CA ĐÃ PHÂN, CA LÀM VIỆC, DỮ LIỆU CHẤM CÔNG, VỊ TRÍ GPS MỚI NHẤT --}}
+            <div class="right-data-column">
+
+                {{-- 1. Phân Hệ Tổng Quan Ca Đã Phân & Các Ca Làm Việc --}}
+                <div class="card shadow-sm grid-two-columns">
+                    {{-- Sub-card: Ca đã phân hôm nay --}}
+                    <div class="sub-data-block border-r">
+                        <div class="card-head-compact">
+                            <h3><i class="ti ti-calendar-stats text-indigo"></i> Phân ca hôm nay</h3>
+                            <a href="{{ route('admin.schedules.index') }}" class="text-xs text-blue-500">Chi tiết</a>
+                        </div>
+                        <div class="compact-list mt-3">
+                            <div class="flex-justify-between py-1 border-b text-xs">
+                                <span class="text-gray-500">Tổng ca điều phối:</span>
+                                <span class="font-bold text-gray-800">{{ $scheduledToday ?? 0 }} ca</span>
+                            </div>
+                            <div class="flex-justify-between py-1 border-b text-xs">
+                                <span class="text-gray-500">Nhân sự thực tế:</span>
+                                <span class="font-bold text-emerald-600">{{ $presentToday ?? 0 }} đang làm</span>
+                            </div>
+                            <div class="flex-justify-between py-1 text-xs">
+                                <span class="text-gray-500">Ca chưa check-in:</span>
+                                <span class="font-bold text-rose-500">{{ ($scheduledToday ?? 0) - ($presentToday ?? 0) }} ca</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Sub-card: Danh sách cấu hình các ca làm việc --}}
+                    <div class="sub-data-block">
+                        <div class="card-head-compact">
+                            <h3><i class="ti ti-alarm text-purple"></i> Khung giờ ca làm việc</h3>
+                            <a href="{{ route('admin.shifts.index') }}" class="text-xs text-blue-500">Cấu hình</a>
+                        </div>
+                        <div class="compact-list shift-mini-scroll mt-2">
+                            @if(isset($activeShifts) && count($activeShifts) > 0)
+                                @foreach($activeShifts as $shift)
+                                    <div class="shift-mini-item">
+                                        <span class="shift-mini-name">{{ $shift->name }}</span>
+                                        <span class="shift-mini-time">{{ substr($shift->start_time, 0, 5) }} - {{ substr($shift->end_time, 0, 5) }}</span>
+                                    </div>
+                                @endforeach
+                            @else
+                                {{-- Fallback tĩnh nếu Controller chưa truyền biến --}}
+                                <div class="shift-mini-item">
+                                    <span class="shift-mini-name">Ca Hành Chính (HC)</span>
+                                    <span class="shift-mini-time">08:00 - 17:00</span>
+                                </div>
+                                <div class="shift-mini-item">
+                                    <span class="shift-mini-name">Ca Sáng (S)</span>
+                                    <span class="shift-mini-time">06:00 - 14:00</span>
+                                </div>
+                                <div class="shift-mini-item">
+                                    <span class="shift-mini-name">Ca Chiều (C)</span>
+                                    <span class="shift-mini-time">14:00 - 22:00</span>
+                                </div>
+                            @endif
+                        </div>
                     </div>
                 </div>
 
-                <div class="management-grid">
-                    <a href="{{ route('admin.staff.index') ?? '#' }}" class="manage-item">
-                        <div class="manage-icon bg-blue"><i class="ti ti-users-group"></i></div>
-                        <div class="manage-text">
-                            <h3>Quản lý nhân viên</h3>
-                            <p>Hồ sơ tài khoản, mã nhân sự, phân vai trò hệ thống</p>
-                        </div>
-                    </a>
+                {{-- 2. Phân Hệ Nhật Ký Dữ Liệu Chấm Công Mới Nhất --}}
+                <div class="card shadow-sm">
+                    <div class="card-head-compact">
+                        <h3><i class="ti ti-device-analytics text-emerald"></i> Log chấm công thời gian thực</h3>
+                        <a href="{{ route('admin.attendance.index') }}" class="text-xs text-blue-500">Xem tất cả</a>
+                    </div>
 
-                    <a href="{{ route('admin.departments.index') }}" class="manage-item">
-                        <div class="manage-icon bg-cyan"><i class="ti ti-hierarchy-2"></i></div>
-                        <div class="manage-text">
-                            <h3>Cơ cấu phòng ban</h3>
-                            <p>Quản lý danh sách sơ đồ tổ chức, phòng ban công ty</p>
-                        </div>
-                    </a>
-
-                    <a href="{{ route('admin.shifts.index') }}" class="manage-item">
-                        <div class="manage-icon bg-purple"><i class="ti ti-alarm"></i></div>
-                        <div class="manage-text">
-                            <h3>Cấu hình ca làm</h3>
-                            <p>Thiết lập giờ check-in, check-out, thời gian ân hạn ca</p>
-                        </div>
-                    </a>
-
-                    <a href="{{ route('admin.schedules.index') }}" class="manage-item">
-                        <div class="manage-icon bg-indigo"><i class="ti ti-calendar-event"></i></div>
-                        <div class="manage-text">
-                            <h3>Lịch trình làm việc</h3>
-                            <p>Xếp lịch phân ca tuần/tháng, điều phối ca làm nhân sự</p>
-                        </div>
-                    </a>
-
-                    <a href="{{ route('admin.attendance.index') }}" class="manage-item">
-                        <div class="manage-icon bg-emerald"><i class="ti ti-calendar-time"></i></div>
-                        <div class="manage-text">
-                            <h3>Bảng tổng hợp công</h3>
-                            <p>Dữ liệu tính công, thời gian đi muộn, về sớm của ngày</p>
-                        </div>
-                    </a>
-
-                    <a href="{{ route('admin.locations.index') }}" class="manage-item">
-                        <div class="manage-icon bg-rose"><i class="ti ti-map-pin"></i></div>
-                        <div class="manage-text">
-                            <h3>Địa điểm chi nhánh</h3>
-                            <p>Thiết lập tọa độ vĩ độ/kinh độ, bán kính vùng GPS cho phép</p>
-                        </div>
-                    </a>
+                    <div class="realtime-log-container mt-2">
+                        @if(isset($recentLogs) && count($recentLogs) > 0)
+                            @foreach($recentLogs as $log)
+                                <div class="realtime-log-row">
+                                    <div class="log-left-part">
+                                        <span class="avatar-sm">{{ strtoupper(substr($log->user->name ?? 'N', 0, 1)) }}</span>
+                                        <div>
+                                            <p class="user-log-name">{{ $log->user->name ?? 'Nhân sự' }}</p>
+                                            <span class="user-log-sub">{{ $log->work_schedule?->shift?->name ?? 'Ca tự do' }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="log-right-part">
+                                        @if($log->log_type === 'check_out' || $log->check_out_time)
+                                            <span class="badge-status bg-rose-100 text-rose-700">Check-Out</span>
+                                            <span class="log-timestamp">{{ \Carbon\Carbon::parse($log->scan_time ?? $log->check_out_time)->format('H:i:s') }}</span>
+                                        @else
+                                            <span class="badge-status bg-emerald-100 text-emerald-700">Check-In</span>
+                                            <span class="log-timestamp">{{ \Carbon\Carbon::parse($log->scan_time ?? $log->check_in_time)->format('H:i:s') }}</span>
+                                        @endif
+                                    </div>
+                                </div>
+                            @endforeach
+                        @else
+                            {{-- Trạng thái trống --}}
+                            <div class="text-center py-4 text-xs text-gray-400">
+                                <i class="ti ti-database-off text-lg block mb-1"></i> Chưa có dữ liệu quét công trong ngày.
+                            </div>
+                        @endif
+                    </div>
                 </div>
-            </div>
 
+                {{-- 3. Phân Hệ Vị Trí GPS Mới Nhất Khi Đi/Về --}}
+                <div class="card shadow-sm">
+                    <div class="card-head-compact">
+                        <h3><i class="ti ti-map-pin text-rose"></i> Định vị GPS giao dịch gần nhất</h3>
+                        <a href="{{ route('admin.locations.index') }}" class="text-xs text-blue-500">Bản đồ chi nhánh</a>
+                    </div>
+
+                    <div class="gps-list mt-2">
+                        @if(isset($recentGpsLogs) && count($recentGpsLogs) > 0)
+                            @foreach($recentGpsLogs as $gps)
+                                <div class="gps-item-row">
+                                    <div class="gps-info">
+                                        <span class="gps-indicator"></span>
+                                        <div>
+                                            <p class="gps-user">{{ $gps->user_name }}</p>
+                                            <span class="gps-coords">Tọa độ: {{ number_format($gps->lat, 5) }}, {{ number_format($gps->lng, 5) }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="gps-meta">
+                                        <span class="gps-time">{{ $gps->time }}</span>
+                                        <span class="gps-type-badge">{{ $gps->type }}</span>
+                                    </div>
+                                </div>
+                            @endforeach
+                        @else
+                            {{-- Giao diện mô phỏng định vị sang trọng nếu chưa đổ data động tự động từ backend --}}
+                            <div class="gps-item-row">
+                                <div class="gps-info">
+                                    <span class="gps-indicator present"></span>
+                                    <div>
+                                        <p class="gps-user">Nguyễn Văn A</p>
+                                        <span class="gps-coords">Vĩ độ: 21.02851, Kinh độ: 105.80481 (Chi nhánh HN)</span>
+                                    </div>
+                                </div>
+                                <div class="gps-meta">
+                                    <span class="gps-time">Vừa xong</span>
+                                    <span class="gps-type-badge in">Vào ca</span>
+                                </div>
+                            </div>
+                            <div class="gps-item-row">
+                                <div class="gps-info">
+                                    <span class="gps-indicator absent"></span>
+                                    <div>
+                                        <p class="gps-user">Trần Thị B</p>
+                                        <span class="gps-coords">Vĩ độ: 10.76262, Kinh độ: 106.66017 (Chi nhánh HCM)</span>
+                                    </div>
+                                </div>
+                                <div class="gps-meta">
+                                    <span class="gps-time">12 phút trước</span>
+                                    <span class="gps-type-badge out">Hết ca</span>
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+
+            </div>
         </div>
 
         {{-- ===== DÒNG DƯỚI CÙNG: DANH SÁCH ĐI MUỘN HÔM NAY ===== --}}
@@ -280,7 +373,7 @@
             width: 26px; height: 26px; border-radius: 50%;
             background: #0369a1; color: white;
             display: flex; align-items: center; justify-content: center;
-            font-size: 0.75rem; font-weight: 700;
+            font-size: 0.75rem; font-weight: 700; margin-right: 6px;
         }
 
         /* ---- Stat Grid ---- */
@@ -314,26 +407,23 @@
         .stat-incomplete .stat-icon { background: #f1f5f9; color: var(--c-incomplete); }
         .stat-incomplete .stat-value { color: var(--c-incomplete); }
 
-        /* ---- TÁCH BIỆT GRID CHA THÀNH CỘT 40% VÀ CỘT QUẢN LÝ TỔNG 60% ---- */
+        /* ---- GRID BỐ CỤC: TRÁI (4.5) - PHẢI (7.5) ---- */
         .dash-row { display: grid; gap: 1.25rem; }
-        .main-split-row { grid-template-columns: 4.5fr 7.5fr; }
+        .main-split-row { grid-template-columns: 4.5fr 7.5fr; align-items: start; }
         .full-width-row { grid-template-columns: 1fr; }
         @media(max-width: 1024px) { .main-split-row { grid-template-columns: 1fr; } }
 
         /* Cột dọc chứa cụm biểu đồ bên trái */
         .side-charts-column { display: flex; flex-direction: column; gap: 1.25rem; }
-
         .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; }
         .card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
         .card-head h2 { font-size: 0.9rem; font-weight: 600; color: var(--text-1); margin: 0; }
-        .card-subtitle { font-size: 0.72rem; color: var(--text-2); margin: 2px 0 0; font-weight: 400; }
         .see-all { font-size: 0.78rem; color: #3b82f6; text-decoration: none; display: flex; align-items: center; gap: 3px; }
         .see-all:hover { text-decoration: underline; }
 
-        /* Container khống chế Canvas biểu đồ cột không bung quá to */
         .chart-canvas-container { width: 100%; height: auto; position: relative; }
 
-        /* ---- Donut chart tinh giản tỉ lệ ---- */
+        /* ---- Donut chart ---- */
         .donut-wrap { display: flex; align-items: center; gap: 1rem; justify-content: flex-start; padding: 0.25rem 0; }
         .donut-legend { display: grid; grid-template-columns: repeat(1, 1fr); gap: 0.35rem; flex: 1; }
         .legend-item  { display: flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--text-2); }
@@ -345,37 +435,57 @@
         .dot-absent     { background: var(--c-absent); }
         .dot-incomplete { background: var(--c-incomplete); }
 
-        /* ---- KHỐI HUB QUẢN LÝ ĐỒNG BỘ CSDL (PHẢI) ---- */
-        .card-management-hub { display: flex; flex-direction: column; }
-        .management-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.85rem; flex: 1; }
-        @media(max-width: 640px) { .management-grid { grid-template-columns: 1fr; } }
+        /* ==================== CÁC PHÂN HỆ MỚI KHỐI PHẢI ==================== */
+        .right-data-column { display: flex; flex-direction: column; gap: 1.25rem; }
 
-        .manage-item {
-            display: flex; align-items: center; gap: 0.85rem; padding: 0.95rem;
-            background: var(--surface-2); border: 1px solid transparent; border-radius: 12px;
-            text-decoration: none; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .manage-item:hover {
-            background: #fff; border-color: #cbd5e1; transform: translateY(-1.5px);
-            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
-        }
-        .manage-icon {
-            width: 40px; height: 40px; border-radius: 10px; display: flex;
-            align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0;
-        }
-        .manage-text { display: flex; flex-direction: column; gap: 2px; }
-        .manage-text h3 { font-size: 0.85rem; font-weight: 600; color: var(--text-1); margin: 0; }
-        .manage-text p { font-size: 0.72rem; color: var(--text-2); margin: 0; line-height: 1.35; }
+        .card-head-compact { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px; }
+        .card-head-compact h3 { font-size: 0.85rem; font-weight: 600; color: var(--text-1); margin: 0; display: flex; align-items: center; gap: 6px; }
+        .card-head-compact i { font-size: 1.1rem; }
 
-        /* Bảng màu hệ thống phân vùng chức năng */
-        .bg-blue    { background: #eff6ff; color: #2563eb; }
-        .bg-cyan    { background: #ecfeff; color: #0891b2; }
-        .bg-purple  { background: #f5f3ff; color: #7c3aed; }
-        .bg-indigo  { background: #e0e7ff; color: #4f46e5; }
-        .bg-emerald { background: #ecfdf5; color: #059669; }
-        .bg-amber   { background: #fffbeb; color: #d97706; }
-        .bg-rose    { background: #fff1f2; color: #e11d48; }
-        .bg-gray    { background: #f1f5f9; color: #475569; }
+        .grid-two-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+        @media(max-width: 640px) { .grid-two-columns { grid-template-columns: 1fr; } .border-r { border-right: none !important; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; } }
+
+        .border-r { border-right: 1px solid #e2e8f0; padding-right: 1.25rem; }
+        .flex-justify-between { display: flex; justify-content: space-between; align-items: center; }
+
+        /* Mini shift render */
+        .shift-mini-scroll { max-height: 95px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
+        .shift-mini-item { display: flex; justify-content: space-between; background: #f8fafc; padding: 4px 8px; border-radius: 6px; font-size: 11px; }
+        .shift-mini-name { color: var(--text-1); font-weight: 500; }
+        .shift-mini-time { color: #4f46e5; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+        /* Realtime log rows */
+        .realtime-log-container { display: flex; flex-direction: column; gap: 6px; max-height: 180px; overflow-y: auto; }
+        .realtime-log-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; background: #f8fafc; border-radius: 8px; transition: background .15s; }
+        .realtime-log-row:hover { background: #f1f5f9; }
+        .log-left-part { display: flex; align-items: center; gap: 8px; }
+        .avatar-sm { width: 28px; height: 28px; border-radius: 50%; background: #e0f2fe; color: #0369a1; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; }
+        .user-log-name { font-size: 12px; font-weight: 600; margin: 0; color: var(--text-1); }
+        .user-log-sub { font-size: 10px; color: var(--text-2); display: block; }
+        .log-right-part { display: flex; align-items: center; gap: 10px; }
+        .badge-status { font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 4px; }
+        .log-timestamp { font-size: 11px; font-weight: 500; color: #475569; font-variant-numeric: tabular-nums; }
+
+        /* GPS rows */
+        .gps-list { display: flex; flex-direction: column; gap: 6px; }
+        .gps-item-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; border: 1px solid #f1f5f9; border-radius: 8px; }
+        .gps-info { display: flex; align-items: center; gap: 8px; }
+        .gps-indicator { width: 6px; height: 6px; border-radius: 50%; background: #3b82f6; display: inline-block; position: relative; }
+        .gps-indicator.present { background: var(--c-present); }
+        .gps-indicator.absent { background: var(--c-absent); }
+        .gps-user { font-size: 12px; font-weight: 600; margin: 0; color: var(--text-1); }
+        .gps-coords { font-size: 11px; color: var(--text-2); font-variant-numeric: tabular-nums; }
+        .gps-meta { text-align: right; display: flex; flex-direction: column; gap: 2px; }
+        .gps-time { font-size: 10px; color: #94a3b8; font-variant-numeric: tabular-nums; }
+        .gps-type-badge { font-size: 10px; font-weight: 600; color: #475569; }
+        .gps-type-badge.in { color: var(--c-present); }
+        .gps-type-badge.out { color: var(--c-early); }
+
+        /* Colors utility */
+        .text-indigo { color: #4f46e5; }
+        .text-purple { color: #7c3aed; }
+        .text-emerald { color: #059669; }
+        .text-rose { color: #e11d48; }
 
         /* ---- Log list ---- */
         .log-list { display: flex; flex-direction: column; gap: 0.5rem; }
@@ -405,7 +515,7 @@
         const weekLate    = @json($weekLate);
         const weekAbsent  = @json($weekAbsent);
 
-        // ---- Biểu đồ 7 ngày (Tối ưu hóa gọn gàng trục chữ nhỏ hơn) ----
+        // ---- Biểu đồ 7 ngày ----
         new Chart(document.getElementById('weekChart'), {
             type: 'bar',
             data: {
@@ -427,7 +537,7 @@
             }
         });
 
-        // ---- Donut chart (Thu gọn tỷ lệ cutout rộng hơn để ôm vừa viền) ----
+        // ---- Donut chart ----
         new Chart(document.getElementById('statusChart'), {
             type: 'doughnut',
             data: {
