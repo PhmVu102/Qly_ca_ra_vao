@@ -42,7 +42,10 @@
                     <div class="space-y-2">
                         <label class="block text-[13px] font-bold text-gray-700 ml-1">Họ và tên <span class="text-red-500">*</span></label>
                         <input type="text" name="name" value="{{ old('name', $staff->name) }}"
-                               class="w-full px-6 py-4 bg-gray-50/50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#b0ffc3] focus:border-[#b0ffc3] transition-all" required>
+                               class="w-full px-6 py-4 bg-gray-50/50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#b0ffc3] focus:border-[#b0ffc3] transition-all"
+                               pattern="^[a-zA-ZÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼỀỀỂẾưăạảấầẩẫậắằẳẵặẹẻẽềềểếỄỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪễệỉịọỏốồổỗộớờởỡợụủứừỬỮỰỲỴÝỶỸỳỵỷỹ\s]+$"
+                               required
+                            >
                     </div>
 
                     <!-- Mã nhân viên -->
