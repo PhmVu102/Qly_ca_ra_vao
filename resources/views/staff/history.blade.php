@@ -12,6 +12,7 @@
                 'late_early_leave' => ['Đi muộn + Về sớm', 'bad'],
                 'incomplete'       => ['Muộn quá nửa ca', 'muted'],
                 'forgot_checkout'  => ['Chưa check-out(tự đóng ca)', 'bad'],
+                'working'          => ['Đang làm việc', 'working'],
                 default            => [$status ?? 'Không rõ', 'muted'],
             };
         }
@@ -394,7 +395,16 @@
         .pagination-wrap {
             margin-top: 22px;
         }
+        .status-badge.working {
+            background: #d1fae5;
+            color: #047857;
+            animation: pulse 1.8s infinite;
+        }
 
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50%       { opacity: .55; }
+        }
         @media (max-width: 768px) {
             .history-shell {
                 padding: 18px;
