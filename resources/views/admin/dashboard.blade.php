@@ -200,27 +200,36 @@
                                     <div>
                                         <p class="user-log-name">{{ $log->user->name ?? 'Nhân sự đã xóa' }}</p>
 
-                                        <span class="user-log-sub">{{ $log->workSchedule->shift->name ?? 'Ca tự do' }}</span>
+                                        <span class="user-log-sub">
+                                            {{ $log->shift->name ?? 'Ca tự do' }}
+                                        </span>
                                     </div>
                                 </div>
 
-                                <div class="log-right-part">
-                                    @if($log->log_type === 'check_out')
-                                        <span class="badge-status bg-rose-100 text-rose-700">Check-Out</span>
-                                    @else
-                                        <span class="badge-status bg-emerald-100 text-emerald-700">Check-In</span>
-                                    @endif
-                                    <span class="log-timestamp">{{ \Carbon\Carbon::parse($log->scan_time)->format('H:i:s') }}</span>
+                                <div class="log-right-part flex flex-col items-end gap-1">
+                                    @php
+                                        $isCheckOut = $log->type === 'check_out';
+                                    @endphp
+
+                                    <div class="flex items-center gap-2">
+                                        <span class="badge-status {{ $isCheckOut ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700' }}">
+                                            {{ $isCheckOut ? 'Check-Out' : 'Check-In' }}
+                                        </span>
+
+                                        <span class="log-timestamp">
+                                            {{ \Carbon\Carbon::parse($log->scan_time)->format('H:i:s') }}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
                         @empty
                             <div class="text-center py-5 text-xs text-gray-400">
-
                                 <i class="ti ti-database-off text-lg block mb-1"></i> Hôm nay chưa có dữ liệu quét công.
                             </div>
                         @endforelse
                     </div>
                 </div>
+
                 <div class="dash-row full-width-row">
                     <div class="card card-late shadow-sm">
                         <div class="card-head">

@@ -38,4 +38,25 @@ class WorkSchedule extends Model
     {
         return $this->belongsTo(CompanyLocation::class);
     }
+
+    public function attendanceRecord()
+    {
+        return $this->hasOne(
+            \App\Models\Attendance::class,
+            'work_schedule_id',
+            'id'
+        );
+    }
+
+    public function getAttendanceAttribute(): ?\App\Models\Attendance
+    {
+        if ($this->relationLoaded('attendanceRecord') && $this->attendanceRecord) {
+            return $this->attendanceRecord;
+        }
+
+        return \App\Models\Attendance::where('user_id', $this->user_id)
+            ->whereDate('work_date', $this->work_date)
+            ->where('shift_id', $this->shift_id)
+            ->first();
+    }
 }

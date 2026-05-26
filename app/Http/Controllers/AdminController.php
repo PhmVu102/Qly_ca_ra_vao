@@ -86,14 +86,45 @@ class AdminController extends Controller
         | Realtime logs hôm nay
         |--------------------------------------------------------------------------
         */
+        // AdminController.php
         $recentLogs = AttendanceLog::with([
                 'user:id,name,department_id',
-                'workSchedule.shift:id,name'
+                'shift:id,name',
+                'workSchedule.shift:id,name',
+                'workSchedule.attendanceRecord', // join qua work_schedule_id
             ])
             ->whereDate('scan_time', $today)
             ->latest('scan_time')
             ->take(8)
             ->get();
+
+        // Sau khi load, fallback bằng composite key cho những schedule thiếu work_schedule_id
+        $missingIds = $recentLogs
+            ->pluck('workSchedule')
+            ->filter(fn($ws) => $ws && !$ws->attendanceRecord)
+            ->pluck('id');
+
+        if ($missingIds->isNotEmpty()) {
+            $fallbackSchedules = WorkSchedule::whereIn('id', $missingIds)->get();
+
+            $fallbackAttendances = \App\Models\Attendance::where(function ($q) use ($fallbackSchedules) {
+                foreach ($fallbackSchedules as $s) {
+                    $q->orWhere(function ($sub) use ($s) {
+                        $sub->where('user_id', $s->user_id)
+                            ->whereDate('work_date', $s->work_date)
+                            ->where('shift_id', $s->shift_id);
+                    });
+                }
+            })->get()->keyBy(fn($a) => $a->user_id . '|' . \Carbon\Carbon::parse($a->work_date)->format('Y-m-d') . '|' . $a->shift_id);
+
+            $recentLogs->each(function ($log) use ($fallbackAttendances) {
+                $ws = $log->workSchedule;
+                if ($ws && !$ws->attendanceRecord) {
+                    $key = $ws->user_id . '|' . \Carbon\Carbon::parse($ws->work_date)->format('Y-m-d') . '|' . $ws->shift_id;
+                    $ws->setRelation('attendanceRecord', $fallbackAttendances->get($key));
+                }
+            });
+        }
 
         /*
         |--------------------------------------------------------------------------
