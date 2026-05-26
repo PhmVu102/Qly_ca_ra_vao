@@ -11,7 +11,7 @@
                 'early_leave'      => ['Về sớm', 'info'],
                 'late_early_leave' => ['Đi muộn + Về sớm', 'bad'],
                 'incomplete'       => ['Muộn quá nửa ca', 'muted'],
-                'forgot_checkout'  => ['Quên check-out', 'bad'],
+                'forgot_checkout'  => ['Quên check-out(tự đóng ca)', 'bad'],
                 'working'          => ['Đang làm việc', 'working'],
                 default            => [$status ?? 'Không rõ', 'muted'],
             };
@@ -272,20 +272,30 @@
             width: 100%;
             border-collapse: collapse;
             min-width: 960px;
+            table-layout: fixed;
         }
+
+        .history-table th:nth-child(1) { width: 90px; }
+        .history-table th:nth-child(2) { width: 160px; }
+        .history-table th:nth-child(3) { width: 120px; }
+        .history-table th:nth-child(4) { width: 120px; }
+        .history-table th:nth-child(5) { width: 100px; }
+        .history-table th:nth-child(6) { width: 100px; }
+        .history-table th:nth-child(7) { width: 100px; }
+        .history-table th:nth-child(8) { width: 170px; }
 
         .history-table thead th {
             background: #f8fafc;
             color: #64748b;
             font-size: 13px;
             font-weight: 800;
-            padding: 15px;
+            padding: 15px 10px;
             text-align: left;
             border-bottom: 1px solid #e2e8f0;
         }
 
         .history-table tbody td {
-            padding: 16px 15px;
+            padding: 16px 10px;
             border-bottom: 1px solid #edf2f7;
             vertical-align: middle;
         }
@@ -319,7 +329,12 @@
             background: #eff6ff;
             padding: 6px 12px;
             border-radius: 999px;
+            display: inline-block;
+            max-width: 140px;
+            overflow: hidden;
+            text-overflow: ellipsis;
             white-space: nowrap;
+            vertical-align: middle;
         }
 
         .time-chip {
