@@ -499,14 +499,16 @@ class StaffController extends Controller
     {
         $this->autoCloseStuckAttendance();
         $attendances = DB::table('attendances')
-            ->where('user_id', auth()->id())
-            ->orderByDesc('work_date')
-            ->orderByDesc('check_in_time')
-            ->selectRaw("*, IF(check_out_time IS NULL, 'working', status) as status")  // thêm dòng này
+            ->leftJoin('shifts', 'attendances.shift_id', '=', 'shifts.id')
+            ->where('attendances.user_id', auth()->id())
+            ->orderByDesc('attendances.work_date')
+            ->orderByDesc('attendances.check_in_time')
+            ->selectRaw("attendances.*, shifts.name as shift_name,
+                IF(attendances.check_out_time IS NULL, 'working', attendances.status) as status")
             ->paginate(15);
 
         return view('staff.history', compact('attendances'));
-}
+    }
     private function calculateDistance(
         $lat1,
         $lon1,
@@ -554,7 +556,7 @@ class StaffController extends Controller
         }
         $request->validate([
             'name'       => 'required|max:100|regex:/^[\pL\s]+$/u',
-            'phone' => 'nullable|numeric|digits:10|unique:users,phone,' . auth()->id(),
+            'phone'      => 'nullable|numeric|digits:10|unique:users,phone,' . auth()->id(),
             'gender'     => 'nullable|in:male,female,other',
             'birth_date' => 'nullable|date|before:today',
             'avatar'     => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
