@@ -11,7 +11,7 @@
                 'early_leave'      => ['Về sớm', 'info'],
                 'late_early_leave' => ['Đi muộn + Về sớm', 'bad'],
                 'incomplete'       => ['Muộn quá nửa ca', 'muted'],
-                'forgot_checkout'  => ['Chưa check-out(tự đóng ca)', 'bad'],
+                'forgot_checkout'  => ['Quên check-out', 'bad'],
                 'working'          => ['Đang làm việc', 'working'],
                 default            => [$status ?? 'Không rõ', 'muted'],
             };
@@ -47,6 +47,7 @@
                     <thead>
                     <tr>
                         <th>Ngày</th>
+                        <th>Ca làm</th>
                         <th>Check-in</th>
                         <th>Check-out</th>
                         <th>Tổng giờ</th>
@@ -59,8 +60,7 @@
                     <tbody>
                     @forelse($attendances as $attendance)
                         @php
-                            [$text, $class] =
-                                statusBadge($attendance->status);
+                            [$text, $class] = statusBadge($attendance->status);
                         @endphp
                         <tr>
                             <td>
@@ -68,7 +68,6 @@
                                     <strong>
                                         {{ \Carbon\Carbon::parse($attendance->work_date)->format('d') }}
                                     </strong>
-
                                     <span>
                                         {{ \Carbon\Carbon::parse($attendance->work_date)->format('m/Y') }}
                                     </span>
@@ -76,9 +75,14 @@
                             </td>
 
                             <td>
+                                <span class="shift-name">
+                                    {{ $attendance->shift_name ?? '—' }}
+                                </span>
+                            </td>
+
+                            <td>
                                 <div class="time-chip in">
                                     <i class="ti ti-login"></i>
-
                                     {{ $attendance->check_in_time
                                         ? \Carbon\Carbon::parse($attendance->check_in_time)->format('H:i')
                                         : '--:--' }}
@@ -88,7 +92,6 @@
                             <td>
                                 <div class="time-chip out">
                                     <i class="ti ti-logout"></i>
-
                                     {{ $attendance->check_out_time
                                         ? \Carbon\Carbon::parse($attendance->check_out_time)->format('H:i')
                                         : '--:--' }}
@@ -96,8 +99,12 @@
                             </td>
 
                             <td class="work-hours">
-                                {{ floor(($attendance->total_work_minutes ?? 0) / 60) }}h
-                                {{ ($attendance->total_work_minutes ?? 0) % 60 }}m
+                                @if($attendance->status === 'working')
+                                    <span class="hours-dash">--</span>
+                                @else
+                                    {{ floor(($attendance->total_work_minutes ?? 0) / 60) }}h
+                                    {{ ($attendance->total_work_minutes ?? 0) % 60 }}m
+                                @endif
                             </td>
 
                             <td>
@@ -128,7 +135,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7">
+                            <td colspan="8">
                                 <div class="empty-state">
                                     <i class="ti ti-calendar-off"></i>
                                     <p>Chưa có dữ liệu chấm công.</p>
@@ -140,6 +147,7 @@
                 </table>
             </div>
         </section>
+
         <!-- PAGINATION -->
         <div class="pagination-wrap">
             {{ $attendances->links() }}
@@ -147,7 +155,6 @@
     </div>
 
     <div id="vucci-chatbox">
-
         <!-- BUTTON -->
         <button id="vucci-chat-toggle">
             💬
@@ -155,14 +162,10 @@
 
         <!-- POPUP -->
         <div id="vucci-chat-popup">
-
             <!-- HEADER -->
             <div id="vucci-chat-header">
                 <span>VUCCI Chatbot</span>
-
-                <button id="vucci-chat-close">
-                    ✕
-                </button>
+                <button id="vucci-chat-close">✕</button>
             </div>
 
             <!-- BODY -->
@@ -172,7 +175,6 @@
                     allow="microphone"
                 ></iframe>
             </div>
-
         </div>
     </div>
 @endsection
@@ -269,7 +271,7 @@
         .history-table {
             width: 100%;
             border-collapse: collapse;
-            min-width: 900px;
+            min-width: 960px;
         }
 
         .history-table thead th {
@@ -310,6 +312,16 @@
             font-size: 11px;
         }
 
+        .shift-name {
+            font-size: 13px;
+            font-weight: 700;
+            color: #1d4ed8;
+            background: #eff6ff;
+            padding: 6px 12px;
+            border-radius: 999px;
+            white-space: nowrap;
+        }
+
         .time-chip {
             display: inline-flex;
             align-items: center;
@@ -333,6 +345,11 @@
         .work-hours {
             font-weight: 900;
             color: #111827;
+        }
+
+        .hours-dash {
+            color: #94a3b8;
+            font-weight: 700;
         }
 
         .status-badge,
@@ -395,6 +412,7 @@
         .pagination-wrap {
             margin-top: 22px;
         }
+
         .status-badge.working {
             background: #d1fae5;
             color: #047857;
@@ -405,6 +423,7 @@
             0%, 100% { opacity: 1; }
             50%       { opacity: .55; }
         }
+
         @media (max-width: 768px) {
             .history-shell {
                 padding: 18px;
@@ -421,22 +440,8 @@
             }
         }
 
-        /* MOBILE */
-        @media (max-width: 640px) {
-            #chatbotWrapper {
-                left: 12px;
-                right: 12px;
-                bottom: 12px;
-            }
-
-            #chatbotPopup {
-                width: calc(100vw - 24px);
-                height: 82vh;
-            }
-        }
-
         /* ======================== AI ======================== */
-        #vucci-chatbox{
+        #vucci-chatbox {
             position: fixed;
             right: 20px;
             bottom: 20px;
@@ -444,7 +449,7 @@
             font-family: Arial, sans-serif;
         }
 
-        #vucci-chat-toggle{
+        #vucci-chat-toggle {
             width: 60px;
             height: 60px;
             border: none;
@@ -457,11 +462,11 @@
             transition: 0.3s;
         }
 
-        #vucci-chat-toggle:hover{
+        #vucci-chat-toggle:hover {
             transform: scale(1.05);
         }
 
-        #vucci-chat-popup{
+        #vucci-chat-popup {
             width: 380px;
             height: 550px;
             border-radius: 22px;
@@ -474,7 +479,7 @@
             box-shadow: 0 15px 40px rgba(0,0,0,0.2);
         }
 
-        #vucci-chat-header{
+        #vucci-chat-header {
             height: 60px;
             background: #047857;
             color: white;
@@ -487,7 +492,7 @@
             flex-shrink: 0;
         }
 
-        #vucci-chat-close{
+        #vucci-chat-close {
             background: transparent;
             border: none;
             color: white;
@@ -495,12 +500,12 @@
             cursor: pointer;
         }
 
-        #vucci-chat-body{
+        #vucci-chat-body {
             flex: 1;
             overflow: hidden;
         }
 
-        #vucci-chat-body iframe{
+        #vucci-chat-body iframe {
             width: 100%;
             height: 120%;
             border: none;
@@ -508,8 +513,8 @@
             padding-bottom: 50px;
         }
 
-        @media(max-width:768px){
-            #vucci-chat-popup{
+        @media (max-width: 768px) {
+            #vucci-chat-popup {
                 width: 95vw;
                 height: 85vh;
                 right: 0;
@@ -521,25 +526,18 @@
 
 @push('scripts')
     <script>
-        // ======================= AI =======================
         const vucciToggle = document.getElementById("vucci-chat-toggle");
-        const vucciPopup = document.getElementById("vucci-chat-popup");
-        const vucciClose = document.getElementById("vucci-chat-close");
+        const vucciPopup  = document.getElementById("vucci-chat-popup");
+        const vucciClose  = document.getElementById("vucci-chat-close");
 
         vucciToggle.addEventListener("click", () => {
-
-            vucciPopup.style.display = "flex";
-
+            vucciPopup.style.display  = "flex";
             vucciToggle.style.display = "none";
-
         });
 
         vucciClose.addEventListener("click", () => {
-
-            vucciPopup.style.display = "none";
-
+            vucciPopup.style.display  = "none";
             vucciToggle.style.display = "block";
-
         });
     </script>
 @endpush
