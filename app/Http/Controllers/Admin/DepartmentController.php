@@ -5,20 +5,22 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Department;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class DepartmentController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Danh sách phòng ban
      */
     public function index()
     {
-        $departments = Department::orderBy('name')->paginate(12);
+        $departments = Department::latest()->paginate(12);
+
         return view('admin.departments.index', compact('departments'));
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Form thêm phòng ban
      */
     public function create()
     {
@@ -26,30 +28,45 @@ class DepartmentController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Lưu phòng ban mới
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'name' => 'required|string|max:100|unique:departments',
-            'description' => 'nullable|string',
+        $validated = $request->validate([
+            'name' => [
+                'required',
+                'string',
+                'max:100',
+
+                // Không cho ký tự đặc biệt
+                'regex:/^[\pL\s0-9\-.]+$/u',
+
+                'unique:departments,name',
+            ],
+
+            'description' => [
+                'nullable',
+                'string',
+                'max:1000',
+            ],
+        ], [
+            'name.required' => 'Tên phòng ban không được để trống.',
+            'name.unique' => 'Tên phòng ban đã tồn tại.',
+            'name.regex' => 'Tên phòng ban không được chứa ký tự đặc biệt.',
+            'name.max' => 'Tên phòng ban không được vượt quá 100 ký tự.',
+
+            'description.max' => 'Mô tả không được vượt quá 1000 ký tự.',
         ]);
 
-        Department::create($request->only(['name', 'description']));
+        Department::create($validated);
 
-        return redirect()->route('admin.departments.index');
+        return redirect()
+            ->route('admin.departments.index')
+            ->with('success', 'Thêm phòng ban thành công!');
     }
 
     /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
+     * Form sửa phòng ban
      */
     public function edit(Department $department)
     {
@@ -57,27 +74,61 @@ class DepartmentController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * Cập nhật phòng ban
      */
     public function update(Request $request, Department $department)
     {
-        $request->validate([
-            'name' => 'required|string|max:100|unique:departments,name,' . $department->id,
-            'description' => 'nullable|string',
+        $validated = $request->validate([
+            'name' => [
+                'required',
+                'string',
+                'max:100',
+
+                // Không cho ký tự đặc biệt
+                'regex:/^[\pL\s0-9\-.]+$/u',
+
+                Rule::unique('departments', 'name')
+                    ->ignore($department->id),
+            ],
+
+            'description' => [
+                'nullable',
+                'string',
+                'max:1000',
+            ],
+        ], [
+            'name.required' => 'Tên phòng ban không được để trống.',
+            'name.unique' => 'Tên phòng ban đã tồn tại.',
+            'name.regex' => 'Tên phòng ban không được chứa ký tự đặc biệt.',
+            'name.max' => 'Tên phòng ban không được vượt quá 100 ký tự.',
+
+            'description.max' => 'Mô tả không được vượt quá 1000 ký tự.',
         ]);
 
-        $department->update($request->only(['name', 'description']));
+        $department->update($validated);
 
-        return redirect()->route('admin.departments.index')->with('success', 'Cập nhật phòng ban thành công!');
+        return redirect()
+            ->route('admin.departments.index')
+            ->with('success', 'Cập nhật phòng ban thành công!');
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Xóa phòng ban
      */
     public function destroy(Department $department)
     {
+        // Kiểm tra còn nhân viên hay không
+        if ($department->users()->exists()) {
+
+            return redirect()
+                ->route('admin.departments.index')
+                ->with('error', 'Không thể xóa phòng ban đang có nhân viên!');
+        }
+
         $department->delete();
 
-        return redirect()->route('admin.departments.index')->with('success', 'Xóa phòng ban thành công!');
+        return redirect()
+            ->route('admin.departments.index')
+            ->with('success', 'Xóa phòng ban thành công!');
     }
 }

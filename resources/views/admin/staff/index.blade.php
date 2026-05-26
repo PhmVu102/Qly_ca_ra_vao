@@ -38,7 +38,7 @@
 
         <!-- Table -->
         <div class="overflow-x-auto">
-            <table class="w-full min-w-[1000px] table-fixed">  <!-- table-fixed giúp kiểm soát chiều rộng -->
+            <table class="w-full min-w-[1000px] table-fixed">
                 <thead>
                     <tr class="bg-gray-50 border-b border-gray-100">
                         <th class="w-28 px-4 py-5 text-left text-sm font-semibold text-gray-500">Mã số</th>
@@ -162,9 +162,41 @@
             </table>
         </div>
 
-        <!-- Pagination -->
-        <div class="px-6 py-5 border-t border-gray-100 bg-gray-50 flex justify-center">
-            {{ $staff->links() }}
+        <div class="px-7 py-5 bg-gray-50 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="text-sm text-gray-600">
+                Hiển thị từ <span class="font-semibold text-gray-800">{{ $staff->firstItem() ?? 0 }}</span>
+                đến <span class="font-semibold text-gray-800">{{ $staff->lastItem() ?? 0 }}</span>
+                trong tổng số <span class="font-semibold text-gray-800">{{ $staff->total() }}</span> nhân sự
+            </div>
+
+            <div class="flex items-center gap-2">
+                {{-- Nút Trang Trước --}}
+                @if ($staff->onFirstPage())
+                    <span class="h-10 px-4 bg-gray-100 text-gray-400 font-medium rounded-xl flex items-center gap-1 cursor-not-allowed text-sm border border-gray-200">
+                        <i class="ti ti-chevron-left"></i> Trang trước
+                    </span>
+                @else
+                    <a href="{{ $staff->previousPageUrl() }}" class="h-10 px-4 bg-white hover:bg-gray-50 text-gray-700 font-medium rounded-xl flex items-center gap-1 text-sm border border-gray-200 shadow-sm transition">
+                        <i class="ti ti-chevron-left"></i> Trang trước
+                    </a>
+                @endif
+
+                {{-- Hiển thị Trang hiện tại / Tổng số trang --}}
+                <span class="text-sm font-medium text-gray-600 px-2">
+                    Trang <span class="text-gray-900 font-bold">{{ $staff->currentPage() }}</span> / {{ $staff->lastPage() }}
+                </span>
+
+                {{-- Nút Trang Sau --}}
+                @if ($staff->hasMorePages())
+                    <a href="{{ $staff->nextPageUrl() }}" class="h-10 px-4 bg-white hover:bg-gray-50 text-gray-700 font-medium rounded-xl flex items-center gap-1 text-sm border border-gray-200 shadow-sm transition">
+                        Trang sau <i class="ti ti-chevron-right"></i>
+                    </a>
+                @else
+                    <span class="h-10 px-4 bg-gray-100 text-gray-400 font-medium rounded-xl flex items-center gap-1 cursor-not-allowed text-sm border border-gray-200">
+                        Trang sau <i class="ti ti-chevron-right"></i>
+                    </span>
+                @endif
+            </div>
         </div>
     </div>
 </div>

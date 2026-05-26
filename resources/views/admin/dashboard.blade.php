@@ -221,37 +221,36 @@
                         @endforelse
                     </div>
                 </div>
-        <div class="dash-row full-width-row">
-            <div class="card card-late shadow-sm">
-                <div class="card-head">
-                    <h2>Đi muộn hôm nay</h2>
-                    <a href="{{ route('admin.attendance.index') }}" class="see-all">Xem tất cả <i class="ti ti-arrow-right"></i></a>
-                </div>
-                <div class="log-list">
-                    @forelse($lateStaff as $att)
-                        <div class="log-row">
-                            <div class="log-avatar">{{ strtoupper(substr($att->user->name, 0, 1)) }}</div>
-                            <div class="log-info">
-                                <strong>{{ $att->user->name }}</strong>
-                                <span>{{ $att->user->department->name ?? '—' }}</span>
-                            </div>
-                            <div class="log-meta">
-                                <span class="log-time">{{ \Carbon\Carbon::parse($att->check_in_time)->format('H:i') }}</span>
-                                <span class="badge-late">+{{ $att->late_minutes }}p</span>
-                            </div>
+                <div class="dash-row full-width-row">
+                    <div class="card card-late shadow-sm">
+                        <div class="card-head">
+                            <h2>Đi muộn hôm nay</h2>
+                            <a href="{{ route('admin.attendance.index') }}" class="see-all">Xem tất cả <i class="ti ti-arrow-right"></i></a>
                         </div>
-                    @empty
-                        <div class="empty-state">
-                            <i class="ti ti-mood-happy"></i>
-                            <p>Không ai đi muộn hôm nay!</p>
+                        <div class="log-list">
+                            @forelse($lateStaff as $att)
+                                <div class="log-row">
+                                    <div class="log-avatar">{{ strtoupper(substr($att->user->name, 0, 1)) }}</div>
+                                    <div class="log-info">
+                                        <strong>{{ $att->user->name }}</strong>
+                                        <span>{{ $att->user->department->name ?? '—' }}</span>
+                                    </div>
+                                    <div class="log-meta">
+                                        <span class="log-time">{{ \Carbon\Carbon::parse($att->check_in_time)->format('H:i') }}</span>
+                                        <span class="badge-late">+{{ $att->late_minutes }}p</span>
+                                    </div>
+                                </div>
+                            @empty
+                                <div class="empty-state">
+                                    <i class="ti ti-mood-happy"></i>
+                                    <p>Không ai đi muộn hôm nay!</p>
+                                </div>
+                            @endforelse
                         </div>
-                    @endforelse
+                    </div>
                 </div>
             </div>
         </div>
-            </div>
-        </div>
-
     </div>
 @endsection
 

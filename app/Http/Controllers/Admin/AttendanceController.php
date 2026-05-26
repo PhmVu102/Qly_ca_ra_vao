@@ -137,8 +137,7 @@ class AttendanceController extends Controller
         // ==================== PAGINATE ====================
         $attendances = $query->orderByDesc('work_date')
             ->orderByDesc('id')
-            ->paginate(15)
-            ->withQueryString();
+            ->get();
 
         // ==================== LOAD ATTENDANCE ====================
         $pageAttendances = Attendance::whereIn(
@@ -163,7 +162,7 @@ class AttendanceController extends Controller
             );
 
         // ==================== MAP ATTENDANCE ====================
-        $attendances->getCollection()->transform(function ($schedule) use ($pageAttendances) {
+        $attendances->transform(function ($schedule) use ($pageAttendances) {
             $schedule->attendance_record = $pageAttendances->get(
                 $schedule->user_id . '|' .
                 $schedule->work_date->format('Y-m-d') . '|' .

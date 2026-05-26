@@ -14,8 +14,8 @@ class ManageStaffController extends Controller
     public function index()
     {
         $users = User::with(['department', 'role'])
-            ->orderBy('role_id')
-            ->orderBy('employee_code')
+            ->orderByRaw('CASE WHEN role_id = 1 THEN 0 ELSE 1 END')
+            ->orderByDesc('created_at')
             ->paginate(15);
 
         return view('admin.staff.index', [
@@ -36,27 +36,33 @@ class ManageStaffController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'name'          => 'required|string|max:255|unique:users,name',
-            'email'         => 'required|email|unique:users',
-            'role_id'       => 'required|exists:roles,id',
-            'employee_code' => 'required|unique:users',
+            'name' => 'required|string|max:255',
+            'email' => [
+                'required',
+                'regex:/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/',
+                'max:255',
+                'unique:users,email',
+            ],
+            'role_id' => 'required|exists:roles,id',
+            'employee_code' => 'required|string|max:50|unique:users,employee_code',
             'department_id' => 'required|exists:departments,id',
-            'phone'         => 'nullable|string|max:50',
-            'hire_date'     => 'nullable|date',
+            'phone' => 'nullable|string|max:20',
+            'hire_date' => 'nullable|date',
         ]);
+        dd('VALIDATION PASSED');
 
         User::create([
-            'name'          => $request->name,
-            'email'         => $request->email,
+            'name' => $request->name,
+            'email' => $request->email,
             'employee_code' => $request->employee_code,
             'department_id' => $request->department_id,
-            'role_id'       => $request->role_id,           // Sửa: dùng giá trị từ form thay vì hardcode
-            'phone'         => $request->phone,
-            'hire_date'     => $request->hire_date,
-            'password'      => bcrypt('password123'),       // Mật khẩu mặc định
+            'role_id' => $request->role_id,
+            'phone' => $request->phone,
+            'hire_date' => $request->hire_date,
+            'password' => bcrypt('password123'),
         ]);
-
-        return redirect()->route('admin.staff.index')
+        return redirect()
+            ->route('admin.staff.index')
             ->with('success', 'Thêm nhân viên thành công!');
     }
 
@@ -74,16 +80,44 @@ class ManageStaffController extends Controller
     public function update(Request $request, User $staff)
     {
         $request->validate([
-            'name'          => 'required|string|max:255|unique:users,name,' . $staff->id,
-            'email'         => 'required|email|unique:users,email,' . $staff->id,
-            'employee_code' => 'required|string|max:255|unique:users,employee_code,' . $staff->id,
-            'department_id' => 'required|exists:departments,id',
-            'role_id'       => 'required|exists:roles,id',
-            'phone'         => 'nullable|string|max:50',
-            'hire_date'     => 'nullable|date',
-            'status'        => 'required|boolean',
+            'name' => 'required|string|max:255',
+            'email' => [
+                'required',
+                'string',
+                'max:255',
+                'regex:/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/',
+                'unique:users,email,' . $staff->id,
+            ],
+            'employee_code' => [
+                'required',
+                'string',
+                'max:50',
+                'unique:users,employee_code,' . $staff->id,
+            ],
+            'department_id' => [
+                'required',
+                'exists:departments,id',
+            ],
+            'role_id' => [
+                'required',
+                'exists:roles,id',
+            ],
+            'phone' => [
+                'nullable',
+                'string',
+                'max:20',
+            ],
+            'hire_date' => [
+                'nullable',
+                'date',
+            ],
+            'status' => [
+                'required',
+                'boolean',
+            ],
+        ], [
+            'email.regex' => 'Email không đúng định dạng.',
         ]);
-
         $staff->update([
             'name'          => $request->name,
             'email'         => $request->email,
@@ -94,7 +128,6 @@ class ManageStaffController extends Controller
             'hire_date'     => $request->hire_date,
             'status'        => $request->status,
         ]);
-
         return redirect()->route('admin.staff.index')
             ->with('success', 'Cập nhật nhân viên thành công!');
     }
@@ -105,7 +138,6 @@ class ManageStaffController extends Controller
             return redirect()->route('admin.staff.index')
                 ->with('error', 'Không được xóa tài khoản Admin!');
         }
-
         $staff->delete();
 
         return redirect()->route('admin.staff.index')

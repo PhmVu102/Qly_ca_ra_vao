@@ -169,7 +169,7 @@
                         <th class="px-6 py-5 text-center font-semibold text-gray-600 w-40">Trạng thái</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100">
+                <tbody id="attendanceTableBody" class="divide-y divide-gray-100 text-sm">
                     @forelse($attendances as $schedule)
                         @php
                             $record = $schedule->attendance_record;
@@ -272,12 +272,17 @@
         </div>
 
         <div class="px-7 py-5 bg-gray-50 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div class="text-sm text-gray-600">
-                Hiển thị từ <span class="font-semibold text-gray-800">{{ $attendances->firstItem() ?? 0 }}</span>
-                đến <span class="font-semibold text-gray-800">{{ $attendances->lastItem() ?? 0 }}</span>
-                trong tổng số <span class="font-semibold text-gray-800">{{ $attendances->total() }}</span> bản ghi
+            <div class="px-6 py-5 border-t bg-gray-50">
+                <div class="flex items-center justify-between">
+                    <div class="text-sm text-gray-600">
+                        Tổng:
+                        <span id="totalRows" class="font-semibold"></span>
+                        bản ghi
+                    </div>
+
+                    <div class="flex items-center gap-2" id="pagination"></div>
+                </div>
             </div>
-            {{ $attendances->links() }}
         </div>
     </div>
 </div>
@@ -297,6 +302,97 @@
                 }, doneTypingInterval);
             });
         }
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+
+        const rowsPerPage = 15;
+
+        const tableBody = document.getElementById('attendanceTableBody');
+
+        const rows = Array.from(tableBody.querySelectorAll('tr'));
+
+        const pagination = document.getElementById('pagination');
+
+        const totalRows = document.getElementById('totalRows');
+
+        totalRows.textContent = rows.length;
+
+        let currentPage = 1;
+
+        function displayRows(page) {
+
+            currentPage = page;
+
+            const start = (page - 1) * rowsPerPage;
+
+            const end = start + rowsPerPage;
+
+            rows.forEach((row, index) => {
+
+                row.style.display =
+                    index >= start && index < end
+                        ? ''
+                        : 'none';
+            });
+
+            renderPagination();
+        }
+
+        function renderPagination() {
+
+            pagination.innerHTML = '';
+
+            const pageCount = Math.ceil(rows.length / rowsPerPage);
+
+            // Prev
+            const prevBtn = document.createElement('button');
+
+            prevBtn.innerHTML = '&laquo;';
+
+            prevBtn.className =
+                'px-4 py-2 rounded-xl border bg-white hover:bg-gray-100';
+
+            prevBtn.disabled = currentPage === 1;
+
+            prevBtn.onclick = () => displayRows(currentPage - 1);
+
+            pagination.appendChild(prevBtn);
+
+            // Number buttons
+            for (let i = 1; i <= pageCount; i++) {
+
+                const btn = document.createElement('button');
+
+                btn.textContent = i;
+
+                btn.className =
+                    `px-4 py-2 rounded-xl border transition
+                    ${i === currentPage
+                        ? 'bg-blue-600 text-white border-blue-600'
+                        : 'bg-white hover:bg-gray-100'}`;
+
+                btn.onclick = () => displayRows(i);
+
+                pagination.appendChild(btn);
+            }
+
+            // Next
+            const nextBtn = document.createElement('button');
+
+            nextBtn.innerHTML = '&raquo;';
+
+            nextBtn.className =
+                'px-4 py-2 rounded-xl border bg-white hover:bg-gray-100';
+
+            nextBtn.disabled = currentPage === pageCount;
+
+            nextBtn.onclick = () => displayRows(currentPage + 1);
+
+            pagination.appendChild(nextBtn);
+        }
+
+        displayRows(1);
     });
 </script>
 @endsection
