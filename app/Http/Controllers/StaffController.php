@@ -547,9 +547,14 @@ class StaffController extends Controller
     }
     public function updateProfile(Request $request)
     {
+        if ($request->has('phone')) {
+            $request->merge([
+                'phone' => str_replace(' ', '', $request->phone)
+            ]);
+        }
         $request->validate([
             'name'       => 'required|max:100|regex:/^[\pL\s]+$/u',
-            'phone'      => 'nullable|regex:/^(0[35789])[0-9]{8}$/|unique:users,phone,' . auth()->id(),
+            'phone' => 'nullable|numeric|digits:10|unique:users,phone,' . auth()->id(),
             'gender'     => 'nullable|in:male,female,other',
             'birth_date' => 'nullable|date|before:today',
             'avatar'     => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
