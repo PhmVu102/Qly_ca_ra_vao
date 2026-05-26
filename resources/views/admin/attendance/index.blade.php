@@ -177,6 +177,10 @@
                             $shiftEnd = \Carbon\Carbon::parse($schedule->work_date->format('Y-m-d') . ' ' . $schedule->shift->end_time);
                             $now = now();
 
+                            if ($shiftEnd->lt($shiftStart)) {
+                                $shiftEnd->addDay();
+                            }
+
                             if (!$record) {
                                 if ($now->lt($shiftStart)) {
                                     $currentStatus = 'upcoming';
